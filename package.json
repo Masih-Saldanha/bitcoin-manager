@@ -1,8 +1,8 @@
 {
-  "name": "back-end-template",
+  "name": "bitcoin-manager",
   "type": "module",
   "version": "1.0.0",
-  "description": "",
+  "description": "A BitCoin API that shows infos about BitCoin transactions.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",

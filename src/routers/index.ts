@@ -1,9 +1,9 @@
 import { Router } from "express";
 
-// import exampleRouter from "./exampleRouter.js";
+import bitcoinRouter from "./bitcoinRouter.js";
 
 const router = Router();
 
-// router.use(exampleRouter);
+router.use(bitcoinRouter);
 
 export default router;
