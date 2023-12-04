@@ -18,9 +18,18 @@ async function getBitcoinBalance(req: Request, res: Response) {
   res.json(balanceData).status(200);
 };
 
+async function getTransactionInfo(req: Request, res: Response) {
+  const tx = req.params.tx;
+
+  const transactionData = await bitcoinService.getTransactionInfo(tx);
+
+  res.json(transactionData).status(200);
+};
+
 const bitcoinController = {
   getBitcoinAddressData,
   getBitcoinBalance,
+  getTransactionInfo,
 };
 
 export default bitcoinController;

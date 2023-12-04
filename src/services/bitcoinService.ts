@@ -74,9 +74,49 @@ async function getBitcoinBalance(address: string) {
   };
 };
 
+async function getTransactionInfo(address: string) {
+  try {
+    const response = await axios.get(
+      `${process.env.BITCOIN_URL}/tx/${address}`, 
+      {
+        auth: 
+        {
+          username: process.env.BITCOIN_USERNAME, 
+          password: process.env.BITCOIN_PASSWORD 
+        }
+      }
+    );
+
+    const data = response.data;
+
+    const addresses = [];
+    const a = []
+
+    data.vout.forEach((output) => {
+      const addressObj = {
+        address: output.addresses[0],
+        value: parseInt(output.value),
+      };
+    
+      addresses.push(addressObj);
+    });
+
+    const transactionDetails = {
+      addresses,
+      block: data.blockHeight,
+      txID: data.txid,
+    };
+
+    return transactionDetails;
+  } catch (error) {
+    throwError(error.response.status, error.response.statusText, error.response.data.error);
+  };
+};
+
 const bitcoinService = {
   getBitcoinAddressData,
   getBitcoinBalance,
+  getTransactionInfo,
 };
 
 export default bitcoinService;
