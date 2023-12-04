@@ -13,6 +13,9 @@ export function throwError(condition: boolean, type: string, message: string | s
 };
 
 export function errorType(error: ErrorData) {
+    if (error.type === "Bad Request") {
+        return { status: 400, message: error.message };
+    };
     if (error.type === "Unauthorized") {
         return { status: 401, message: error.message };
     };
