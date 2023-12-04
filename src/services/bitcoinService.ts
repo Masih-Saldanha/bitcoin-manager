@@ -4,42 +4,36 @@ import { throwError } from "../utils/errorTypeUtils.js";
 
 async function getBitcoinAddressData(address: string) {
   try {
-    const response = await axios.get(`https://blockchain.info/rawaddr/${address}`);
-    
+    const response = await axios.get(
+      `${process.env.BITCOIN_URL}/address/${address}`, 
+      {
+        auth: 
+        {
+          username: process.env.BITCOIN_USERNAME, 
+          password: process.env.BITCOIN_PASSWORD 
+        }
+      }
+    );
+
     const data = response.data;
 
-    let confirmed = 0;
-    let unconfirmed = 0;
-
-    const unspentOutputs = await axios.get(`https://blockchain.info/unspent?active=${address}`);
-
-    const unspentOutputsData = unspentOutputs.data.unspent_outputs;
-
-    for (const output of unspentOutputsData) {
-      if (output.confirmations >= 2) {
-        confirmed += output.value;
-      } else if (output.confirmations < 2) {
-        unconfirmed += output.value;
-      }
-    }
-  
     const addressDetails = {
       address: data.address,
-      balance: data.final_balance,
-      totalTx: data.n_tx,
+      balance: data.balance,
+      totalTx: data.txs.toString(),
       balance_confirmed_unconfirmed: {
-        confirmed, 
-        unconfirmed,
+        confirmed: data.balance,
+        unconfirmed: data.unconfirmedBalance,
       },
       total: {
-        sent: data.total_sent,
-        received: data.total_received,
+        sent: data.totalSent,
+        received: data.totalReceived,
       }
     };
-  
+
     return addressDetails;
   } catch (error) {
-    throwError(error.response.status, error.response.statusText, error.response.data.message);
+    throwError(error.response.status, error.response.statusText, error.response.data.error);
   };
 };
 
@@ -48,26 +42,35 @@ async function getBitcoinBalance(address: string) {
     let confirmed = 0;
     let unconfirmed = 0;
 
-    const unspentOutputs = await axios.get(`https://blockchain.info/unspent?active=${address}`);
+    const unspentOutputs = await axios.get(
+      `${process.env.BITCOIN_URL}/utxo/${address}`, 
+      {
+        auth: 
+        {
+          username: process.env.BITCOIN_USERNAME, 
+          password: process.env.BITCOIN_PASSWORD 
+        }
+      }
+    );
 
-    const unspentOutputsData = unspentOutputs.data.unspent_outputs;
+    const data = unspentOutputs.data;
 
-    for (const output of unspentOutputsData) {
-      if (output.confirmations >= 2) {
-        confirmed += output.value;
-      } else if (output.confirmations < 2) {
-        unconfirmed += output.value;
+    for (const tx of data) {
+      if (tx.confirmations >= 2) {
+        confirmed += parseInt(tx.value);
+      } else if (tx.confirmations < 2) {
+        unconfirmed += parseInt(tx.value);
       }
     }
 
     const balanceDetails = {
-      confirmed,
-      unconfirmed,
+      confirmed: confirmed.toString(),
+      unconfirmed: unconfirmed.toString(),
     };
 
     return balanceDetails;
   } catch (error) {
-    throwError(error.response.status, error.response.statusText, error.response.data.message);
+    throwError(error.response.status, error.response.statusText, error.response.data.error);
   };
 };
 
