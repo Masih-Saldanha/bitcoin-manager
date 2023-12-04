@@ -5,16 +5,15 @@ import { throwError } from "../utils/errorTypeUtils.js";
 async function getBitcoinAddressData(address: string) {
   try {
     const response = await axios.get(
-      `${process.env.BITCOIN_URL}/address/${address}`, 
+      `${process.env.BITCOIN_URL}/address/${address}`,
       {
-        auth: 
+        auth:
         {
-          username: process.env.BITCOIN_USERNAME, 
-          password: process.env.BITCOIN_PASSWORD 
+          username: process.env.BITCOIN_USERNAME,
+          password: process.env.BITCOIN_PASSWORD
         }
       }
     );
-
     const data = response.data;
 
     const addressDetails = {
@@ -39,22 +38,20 @@ async function getBitcoinAddressData(address: string) {
 
 async function getBitcoinBalance(address: string) {
   try {
-    let confirmed = 0;
-    let unconfirmed = 0;
-
     const unspentOutputs = await axios.get(
-      `${process.env.BITCOIN_URL}/utxo/${address}`, 
+      `${process.env.BITCOIN_URL}/utxo/${address}`,
       {
-        auth: 
+        auth:
         {
-          username: process.env.BITCOIN_USERNAME, 
-          password: process.env.BITCOIN_PASSWORD 
+          username: process.env.BITCOIN_USERNAME,
+          password: process.env.BITCOIN_PASSWORD
         }
       }
     );
-
     const data = unspentOutputs.data;
 
+    let confirmed = 0;
+    let unconfirmed = 0;
     for (const tx of data) {
       if (tx.confirmations >= 2) {
         confirmed += parseInt(tx.value);
@@ -74,30 +71,70 @@ async function getBitcoinBalance(address: string) {
   };
 };
 
-async function getTransactionInfo(address: string) {
+async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
   try {
-    const response = await axios.get(
-      `${process.env.BITCOIN_URL}/tx/${address}`, 
+    const unspentOutputs = await axios.get(
+      `${process.env.BITCOIN_URL}/utxo/${address}`,
       {
-        auth: 
+        auth:
         {
-          username: process.env.BITCOIN_USERNAME, 
-          password: process.env.BITCOIN_PASSWORD 
+          username: process.env.BITCOIN_USERNAME,
+          password: process.env.BITCOIN_PASSWORD
         }
       }
     );
+    const data = unspentOutputs.data;
 
+    const orderedData = data.slice();
+    orderedData.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+
+    let countAmout = 0;
+
+    const utxoNeeded = []
+    for (const utxo of orderedData) {
+      if (
+        countAmout < totalAmount &&
+        totalAmount >= parseInt(utxo.value)
+      ) {
+        countAmout += parseInt(utxo.value);
+        const utxoData = {
+          txid: utxo.txid,
+          amount: utxo.value,
+        };
+        utxoNeeded.push(utxoData);
+        if (totalAmount < parseInt(utxo.value)) {
+          break;
+        }
+      }
+    }
+
+    const utxoList = { utxos: utxoNeeded }
+    return utxoList;
+  } catch (error) {
+    throwError(error.response.status, error.response.statusText, error.response.data.error);
+  };
+};
+
+async function getTransactionInfo(address: string) {
+  try {
+    const response = await axios.get(
+      `${process.env.BITCOIN_URL}/tx/${address}`,
+      {
+        auth:
+        {
+          username: process.env.BITCOIN_USERNAME,
+          password: process.env.BITCOIN_PASSWORD
+        }
+      }
+    );
     const data = response.data;
 
     const addresses = [];
-    const a = []
-
     data.vout.forEach((output) => {
       const addressObj = {
         address: output.addresses[0],
         value: parseInt(output.value),
       };
-    
       addresses.push(addressObj);
     });
 
@@ -116,6 +153,7 @@ async function getTransactionInfo(address: string) {
 const bitcoinService = {
   getBitcoinAddressData,
   getBitcoinBalance,
+  utxoNeededToSendBitcoin,
   getTransactionInfo,
 };
 
