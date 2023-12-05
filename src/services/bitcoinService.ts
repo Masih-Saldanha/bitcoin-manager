@@ -62,13 +62,13 @@ async function getBitcoinBalance(address: string) {
     );
     const data = unspentOutputs.data;
 
-    let confirmed = 0;
-    let unconfirmed = 0;
+    let confirmed = BigInt(0);
+    let unconfirmed = BigInt(0);
     for (const tx of data) {
       if (tx.confirmations >= 2) {
-        confirmed += parseInt(tx.value);
+        confirmed += BigInt(tx.value);
       } else if (tx.confirmations < 2) {
-        unconfirmed += parseInt(tx.value);
+        unconfirmed += BigInt(tx.value);
       }
     }
 
@@ -89,6 +89,7 @@ async function getBitcoinBalance(address: string) {
 
 async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
   try {
+    const bigIntTotalAmount = BigInt(totalAmount);
     throwError(!validate(address), "Bad Request", "Invalid address");
     const unspentOutputs = await axios.get(
       `${process.env.BITCOIN_URL}/utxo/${address}`,
@@ -102,35 +103,35 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
     );
     const data = unspentOutputs.data;
 
-    let maxAmount = 0;
+    let maxAmount = BigInt(0);
     data.forEach(utxo => {
-      maxAmount += parseInt(utxo.value);
+      maxAmount += BigInt(utxo.value);
     });
-    throwError(totalAmount > maxAmount, "Bad Request", "Insufficient amount of bitcoins");
+    throwError(bigIntTotalAmount > maxAmount, "Bad Request", "Insufficient amount of bitcoins");
 
     const orderedData = data.slice();
     orderedData.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
 
-    let countAmout = 0;
+    let countAmout = BigInt(0);
 
     const utxoNeeded = []
     for (const utxo of orderedData) {
       if (
-        countAmout < totalAmount &&
-        totalAmount >= parseInt(utxo.value)
+        countAmout < bigIntTotalAmount &&
+        bigIntTotalAmount >= BigInt(utxo.value)
       ) {
-        countAmout += parseInt(utxo.value);
+        countAmout += BigInt(utxo.value);
         const utxoData = {
           txid: utxo.txid,
           amount: utxo.value,
         };
         utxoNeeded.push(utxoData);
-        if (totalAmount < parseInt(utxo.value)) {
+        if (bigIntTotalAmount < BigInt(utxo.value)) {
           break;
         }
       }
     }
-    throwError(countAmout < totalAmount, "Bad Request", "Insufficient amount of utxo");
+    throwError(countAmout < bigIntTotalAmount, "Bad Request", "Insufficient amount of utxo");
 
     const utxoList = { utxos: utxoNeeded }
     return utxoList;
@@ -162,7 +163,7 @@ async function getTransactionInfo(txid: string) {
     data.vout.forEach((output) => {
       const addressObj = {
         address: output.addresses[0],
-        value: parseInt(output.value),
+        value: BigInt(output.value).toString(),
       };
       addresses.push(addressObj);
     });
