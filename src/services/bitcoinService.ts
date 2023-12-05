@@ -126,7 +126,7 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
           amount: utxo.value,
         };
         utxoNeeded.push(utxoData);
-        if (bigIntTotalAmount < BigInt(utxo.value)) {
+        if (countAmout >= bigIntTotalAmount) {
           break;
         }
       }
