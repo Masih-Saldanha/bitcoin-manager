@@ -32,7 +32,11 @@ async function getBitcoinAddressData(address: string) {
 
     return addressDetails;
   } catch (error) {
-    throwError(error.response.status, error.response.statusText, error.response.data.error);
+    if (error.type) {
+      throwError(true, error.type, error.message);
+    } else {
+      throwError(error.response.status, error.response.statusText, error.response.data.error);
+    }
   };
 };
 
@@ -67,7 +71,11 @@ async function getBitcoinBalance(address: string) {
 
     return balanceDetails;
   } catch (error) {
-    throwError(error.response.status, error.response.statusText, error.response.data.error);
+    if (error.type) {
+      throwError(true, error.type, error.message);
+    } else {
+      throwError(error.response.status, error.response.statusText, error.response.data.error);
+    }
   };
 };
 
@@ -84,6 +92,12 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
       }
     );
     const data = unspentOutputs.data;
+
+    let maxAmount = 0;
+    data.forEach(utxo => {
+      maxAmount += parseInt(utxo.value);
+    });
+    throwError(totalAmount > maxAmount, "Bad Request", "Insufficient amount of bitcoins");
 
     const orderedData = data.slice();
     orderedData.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
@@ -107,11 +121,16 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
         }
       }
     }
+    throwError(countAmout < totalAmount, "Bad Request", "Insufficient amount of utxo");
 
     const utxoList = { utxos: utxoNeeded }
     return utxoList;
   } catch (error) {
-    throwError(error.response.status, error.response.statusText, error.response.data.error);
+    if (error.type) {
+      throwError(true, error.type, error.message);
+    } else {
+      throwError(error.response.status, error.response.statusText, error.response.data.error);
+    }
   };
 };
 
@@ -146,7 +165,11 @@ async function getTransactionInfo(address: string) {
 
     return transactionDetails;
   } catch (error) {
-    throwError(error.response.status, error.response.statusText, error.response.data.error);
+    if (error.type) {
+      throwError(true, error.type, error.message);
+    } else {
+      throwError(error.response.status, error.response.statusText, error.response.data.error);
+    }
   };
 };
 
