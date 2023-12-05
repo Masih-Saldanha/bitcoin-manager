@@ -5,8 +5,6 @@ import bitcoinService from "../../src/services/bitcoinService.js";
 
 const validAddress = "bc1qyds5jrka5mfcltc7c27jmmxzuxzg6shjwfwca7";
 const validTx = "3654d26660dcc05d4cfb25a1641a1e61f06dfeb38ee2279bdb049d018f1830ab";
-const invalidData = "a";
-const emptyString = "";
 const mockedAddressData = {
   page: 1,
   totalPages: 1,

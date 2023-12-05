@@ -1,12 +1,23 @@
 import supertest from "supertest";
+import axios from "axios";
 
 import app from "../../src/config/app.js";
 import "../../src/config/dotenvConfig.js";
+import { throwError } from "../../src/utils/errorTypeUtils.js";
 
 const validAddress = "bc1qyds5jrka5mfcltc7c27jmmxzuxzg6shjwfwca7";
 const validTx = "3654d26660dcc05d4cfb25a1641a1e61f06dfeb38ee2279bdb049d018f1830ab";
 const invalidData = "a";
 const emptyString = "";
+const badRequestError = {
+  response: {
+    status: 400,
+    statusText: "Bad Request",
+    data: {
+      error: "Invalid"
+    }
+  }
+};
 
 describe("Successful bitcoin integrations tests", () => {
   it("Should return the expected structure on /details/:address", async () => {
@@ -150,5 +161,65 @@ describe("Fail bitcoin integrations tests", () => {
 
     expect(response.text).toBe("Invalid txid");
     expect(response.statusCode).toBe(400);
+  });
+
+  it("Should throw 'Invalid' on /details/:address", async () => {
+    jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
+      throw badRequestError;
+    });
+
+    const response = await supertest(app).get(`/details/${validAddress}`);
+
+    expect(response.text).toBe("Invalid");
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("Should throw 'Invalid' on /balance/:address", async () => {
+    jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
+      throw badRequestError;
+    });
+
+    const response = await supertest(app).get(`/balance/${validAddress}`);
+
+    expect(response.text).toBe("Invalid");
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("Should throw 'Invalid' on /send", async () => {
+    jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
+      throw badRequestError;
+    });
+
+    const requestBody = {
+      address: validAddress,
+      bitcoin: 1000,
+    };
+
+    const response = await supertest(app).post(`/send/`).send(requestBody);
+
+    expect(response.text).toBe("Invalid");
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("Should throw 'Invalid' on /tx/:tx", async () => {
+    jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
+      throw badRequestError;
+    });
+
+    const response = await supertest(app).get(`/tx/${validTx}`);
+
+    expect(response.text).toBe("Invalid");
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("Should throw 'Internal Server Error' on /details/:address", async () => {
+    jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
+      throwError(true, "", "");
+    });
+
+    const response = await supertest(app).get(`/details/${validAddress}`);
+
+    expect(response.text).toBe("Internal Server Error");
+    expect(response.statusCode).toBe(500);
   });
 });
