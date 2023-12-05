@@ -1,9 +1,16 @@
 import axios from "axios";
+import { validate } from 'bitcoin-address-validation';
 
 import { throwError } from "../utils/errorTypeUtils.js";
 
+function isValidTransactionId(txid: string) {
+  const regex = /^[a-fA-F0-9]{64}$/;
+  return regex.test(txid);
+}
+
 async function getBitcoinAddressData(address: string) {
   try {
+    throwError(!validate(address), "Bad Request", "Invalid address");
     const response = await axios.get(
       `${process.env.BITCOIN_URL}/address/${address}`,
       {
@@ -42,6 +49,7 @@ async function getBitcoinAddressData(address: string) {
 
 async function getBitcoinBalance(address: string) {
   try {
+    throwError(!validate(address), "Bad Request", "Invalid address");
     const unspentOutputs = await axios.get(
       `${process.env.BITCOIN_URL}/utxo/${address}`,
       {
@@ -81,6 +89,7 @@ async function getBitcoinBalance(address: string) {
 
 async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
   try {
+    throwError(!validate(address), "Bad Request", "Invalid address");
     const unspentOutputs = await axios.get(
       `${process.env.BITCOIN_URL}/utxo/${address}`,
       {
@@ -134,10 +143,11 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
   };
 };
 
-async function getTransactionInfo(address: string) {
+async function getTransactionInfo(txid: string) {
   try {
+    throwError(!isValidTransactionId(txid), "Bad Request", "Invalid txid");
     const response = await axios.get(
-      `${process.env.BITCOIN_URL}/tx/${address}`,
+      `${process.env.BITCOIN_URL}/tx/${txid}`,
       {
         auth:
         {
