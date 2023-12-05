@@ -4,42 +4,21 @@ import axios from "axios";
 import app from "../../src/config/app.js";
 import "../../src/config/dotenvConfig.js";
 import { throwError } from "../../src/utils/errorTypeUtils.js";
+import bitcoinFactory from "../factories/bitcoinFactory.js"
 
-const validAddress = "bc1qyds5jrka5mfcltc7c27jmmxzuxzg6shjwfwca7";
-const validTx = "3654d26660dcc05d4cfb25a1641a1e61f06dfeb38ee2279bdb049d018f1830ab";
 const invalidData = "a";
 const emptyString = "";
-const badRequestError = {
-  response: {
-    status: 400,
-    statusText: "Bad Request",
-    data: {
-      error: "Invalid"
-    }
-  }
-};
+const badRequest = "Bad Request";
 
 describe("Successful bitcoin integrations tests", () => {
   it("Should return the expected structure on /details/:address", async () => {
-    const response = await supertest(app).get(`/details/${validAddress}`);
+    const response = await supertest(app).get(`/details/${bitcoinFactory.validAddress}`);
 
-     const expectedStructure = {
-      address: expect.any(String),
-      balance: expect.any(String),
-      totalTx: expect.any(String),
-      balance_confirmed_unconfirmed: {
-        confirmed: expect.any(String),
-        unconfirmed: expect.any(String),
-      },
-      total: {
-        sent: expect.any(String),
-        received: expect.any(String),
-      },
-    };
+    const expectedStructure = bitcoinFactory.expectedStructureAddressDetails;
 
     expect(response.body).toMatchObject(expectedStructure);
 
-    expect(response.body.address).toEqual(validAddress);
+    expect(response.body.address).toEqual(bitcoinFactory.validAddress);
     expect(response.body.balance).toEqual(expect.any(String));
     expect(response.body.totalTx).toEqual(expect.any(String));
     expect(response.body.balance_confirmed_unconfirmed.confirmed).toEqual(expect.any(String));
@@ -51,12 +30,9 @@ describe("Successful bitcoin integrations tests", () => {
   });
 
   it("Should return the expected structure on /balance/:address", async () => {
-    const response = await supertest(app).get(`/balance/${validAddress}`);
+    const response = await supertest(app).get(`/balance/${bitcoinFactory.validAddress}`);
 
-    const expectedStructure = {
-      confirmed: expect.any(String),
-      unconfirmed: expect.any(String),
-    };
+    const expectedStructure = bitcoinFactory.expectedStructureAddressBalance;
 
     expect(response.body).toMatchObject(expectedStructure);
 
@@ -67,16 +43,11 @@ describe("Successful bitcoin integrations tests", () => {
   });
 
   it("Should return the expected structure on /send", async () => {
-    const requestBody = {
-      address: validAddress,
-      bitcoin: 1000,
-    };
+    const requestBody = bitcoinFactory.returnRequestBody(bitcoinFactory.validAddress, 1000);
 
     const response = await supertest(app).post(`/send`).send(requestBody);
 
-    const expectedStructure = {
-      utxos: expect.any(Array),
-    };
+    const expectedStructure = bitcoinFactory.expectedStructureSendAddress;
 
     expect(response.body).toMatchObject(expectedStructure);
 
@@ -92,13 +63,9 @@ describe("Successful bitcoin integrations tests", () => {
   });
 
   it("Should return the expected structure on /tx/:tx", async () => {
-    const response = await supertest(app).get(`/tx/${validTx}`);
+    const response = await supertest(app).get(`/tx/${bitcoinFactory.validTx}`);
 
-    const expectedStructure = {
-      addresses: expect.any(Array),
-      block: expect.any(Number),
-      txID: expect.any(String),
-    };
+    const expectedStructure = bitcoinFactory.expectedStructureTx;
 
     expect(response.body).toMatchObject(expectedStructure);
 
@@ -132,10 +99,8 @@ describe("Fail bitcoin integrations tests", () => {
   });
 
   it("Should return 'Invalid address' on /send/", async () => {
-    const requestBody = {
-      address: invalidData,
-      bitcoin: 1000,
-    };
+    const requestBody = bitcoinFactory.returnRequestBody(invalidData, 1000);
+
     const response = await supertest(app).post(`/send/`).send(requestBody);
 
     expect(response.text).toBe("Invalid address");
@@ -143,10 +108,8 @@ describe("Fail bitcoin integrations tests", () => {
   });
 
   it("Should return Joi verification errors on /send/", async () => {
-    const requestBody = {
-      address: emptyString,
-      bitcoin: 0,
-    };
+    const requestBody = bitcoinFactory.returnRequestBody(emptyString, 0);
+
     const response = await supertest(app).post(`/send/`).send(requestBody);
 
     expect(response.body).toEqual([
@@ -163,52 +126,53 @@ describe("Fail bitcoin integrations tests", () => {
     expect(response.statusCode).toBe(400);
   });
 
-  it("Should throw 'Invalid' on /details/:address", async () => {
+  it("Should throw 'Invalid address' on /details/:address", async () => {
+    const message = "Invalid address";
     jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
-      throw badRequestError;
+      throw bitcoinFactory.returnError(400, badRequest, message);
     });
 
-    const response = await supertest(app).get(`/details/${validAddress}`);
+    const response = await supertest(app).get(`/details/${bitcoinFactory.validAddress}`);
 
-    expect(response.text).toBe("Invalid");
+    expect(response.text).toBe(message);
     expect(response.statusCode).toBe(400);
   });
 
-  it("Should throw 'Invalid' on /balance/:address", async () => {
+  it("Should throw 'Invalid address' on /balance/:address", async () => {
+    const message = "Invalid address";
     jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
-      throw badRequestError;
+      throw bitcoinFactory.returnError(400, badRequest, message);
     });
 
-    const response = await supertest(app).get(`/balance/${validAddress}`);
+    const response = await supertest(app).get(`/balance/${bitcoinFactory.validAddress}`);
 
-    expect(response.text).toBe("Invalid");
+    expect(response.text).toBe(message);
     expect(response.statusCode).toBe(400);
   });
 
-  it("Should throw 'Invalid' on /send", async () => {
+  it("Should throw 'Invalid address' on /send", async () => {
+    const message = "Invalid address";
     jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
-      throw badRequestError;
+      throw bitcoinFactory.returnError(400, badRequest, message);
     });
 
-    const requestBody = {
-      address: validAddress,
-      bitcoin: 1000,
-    };
+    const requestBody = bitcoinFactory.returnRequestBody(bitcoinFactory.validAddress, 1000);
 
     const response = await supertest(app).post(`/send/`).send(requestBody);
 
-    expect(response.text).toBe("Invalid");
+    expect(response.text).toBe(message);
     expect(response.statusCode).toBe(400);
   });
 
-  it("Should throw 'Invalid' on /tx/:tx", async () => {
+  it("Should throw 'Invalid txid' on /tx/:tx", async () => {
+    const message = "Invalid txid";
     jest.spyOn(axios, 'get').mockImplementationOnce((): any => {
-      throw badRequestError;
+      throw bitcoinFactory.returnError(400, badRequest, message);
     });
 
-    const response = await supertest(app).get(`/tx/${validTx}`);
+    const response = await supertest(app).get(`/tx/${bitcoinFactory.validTx}`);
 
-    expect(response.text).toBe("Invalid");
+    expect(response.text).toBe(message);
     expect(response.statusCode).toBe(400);
   });
 
@@ -217,7 +181,7 @@ describe("Fail bitcoin integrations tests", () => {
       throwError(true, "", "");
     });
 
-    const response = await supertest(app).get(`/details/${validAddress}`);
+    const response = await supertest(app).get(`/details/${bitcoinFactory.validAddress}`);
 
     expect(response.text).toBe("Internal Server Error");
     expect(response.statusCode).toBe(500);
