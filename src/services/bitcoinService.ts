@@ -1,26 +1,13 @@
-import axios from "axios";
 import { validate } from 'bitcoin-address-validation';
 
 import { throwError } from "../utils/errorTypeUtils.js";
-
-function isValidTransactionId(txid: string) {
-  const regex = /^[a-fA-F0-9]{64}$/;
-  return regex.test(txid);
-}
+import isValidTxid from "../helpers/isValidTxid.js";
+import returnAxiosRequisition from "../helpers/returnAxiosRequisition.js";
 
 async function getBitcoinAddressData(address: string) {
   try {
     throwError(!validate(address), "Bad Request", "Invalid address");
-    const response = await axios.get(
-      `${process.env.BITCOIN_URL}/address/${address}`,
-      {
-        auth:
-        {
-          username: process.env.BITCOIN_USERNAME,
-          password: process.env.BITCOIN_PASSWORD
-        }
-      }
-    );
+    const response = await returnAxiosRequisition("address", address);
     const data = response.data;
 
     const addressDetails = {
@@ -50,16 +37,7 @@ async function getBitcoinAddressData(address: string) {
 async function getBitcoinBalance(address: string) {
   try {
     throwError(!validate(address), "Bad Request", "Invalid address");
-    const unspentOutputs = await axios.get(
-      `${process.env.BITCOIN_URL}/utxo/${address}`,
-      {
-        auth:
-        {
-          username: process.env.BITCOIN_USERNAME,
-          password: process.env.BITCOIN_PASSWORD
-        }
-      }
-    );
+    const unspentOutputs = await returnAxiosRequisition("utxo", address);
     const data = unspentOutputs.data;
 
     let confirmed = BigInt(0);
@@ -91,16 +69,7 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
   try {
     const bigIntTotalAmount = BigInt(totalAmount);
     throwError(!validate(address), "Bad Request", "Invalid address");
-    const unspentOutputs = await axios.get(
-      `${process.env.BITCOIN_URL}/utxo/${address}`,
-      {
-        auth:
-        {
-          username: process.env.BITCOIN_USERNAME,
-          password: process.env.BITCOIN_PASSWORD
-        }
-      }
-    );
+    const unspentOutputs = await returnAxiosRequisition("utxo", address);;
     const data = unspentOutputs.data;
 
     let maxAmount = BigInt(0);
@@ -109,13 +78,11 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
     });
     throwError(bigIntTotalAmount > maxAmount, "Bad Request", "Insufficient amount of bitcoins");
 
-    const orderedData = data.slice();
-    orderedData.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
-
-    let countAmout = BigInt(0);
+    data.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
 
     const utxoNeeded = []
-    for (const utxo of orderedData) {
+    let countAmout = BigInt(0);
+    for (const utxo of data) {
       if (
         countAmout < bigIntTotalAmount &&
         bigIntTotalAmount >= BigInt(utxo.value)
@@ -146,17 +113,8 @@ async function utxoNeededToSendBitcoin(address: string, totalAmount: number) {
 
 async function getTransactionInfo(txid: string) {
   try {
-    throwError(!isValidTransactionId(txid), "Bad Request", "Invalid txid");
-    const response = await axios.get(
-      `${process.env.BITCOIN_URL}/tx/${txid}`,
-      {
-        auth:
-        {
-          username: process.env.BITCOIN_USERNAME,
-          password: process.env.BITCOIN_PASSWORD
-        }
-      }
-    );
+    throwError(!isValidTxid(txid), "Bad Request", "Invalid txid");
+    const response = await returnAxiosRequisition("tx", txid);
     const data = response.data;
 
     const addresses = [];
