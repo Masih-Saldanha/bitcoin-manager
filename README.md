@@ -12,9 +12,9 @@
 
 Bitcoin Manager is a Node.js application that provides an API for retrieving information about Bitcoin transactions. It includes features such as getting details about a Bitcoin address, checking the balance, obtaining UTXO needed to send Bitcoin, and fetching information about a specific transaction.
 
-## Database deploy link
+## API deploy link
 
-https://back-end-template-example.com/
+https://bitcoin-manager.onrender.com/
 
 ## Usage:
 
