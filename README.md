@@ -42,36 +42,21 @@ $ npm run dev
 ```
 - GET /details/:address
     - Get details about a specific Bitcoin address.
-    - headers: {
-        "auth": {
-          "username": "usernameExample",
-          "password": "passwordExample"
-        }
-    }
+    - headers: {}
     - body: {}
 ```
 ### Bitcoin Address Balance
 ```
 - GET /balance/:address
     - Get the balance of a specific Bitcoin address.
-    - headers: {
-        "auth": {
-          "username": "usernameExample",
-          "password": "passwordExample"
-        }
-    }
+    - headers: {}
     - body: {}
 ```
 ### UTXO Needed to Send Bitcoin
 ```
 - GET /send
     - Get the UTXO needed to send a specific amount of Bitcoin from an address.
-    - headers: {
-        "auth": {
-          "username": "usernameExample",
-          "password": "passwordExample"
-        }
-    }
+    - headers: {}
     - body: {
         "address": "someBitcoinAddress";
         "bitcoin": 1000;
@@ -81,12 +66,7 @@ $ npm run dev
 ```
 - GET /tx/:tx
     - Get information about a specific Bitcoin transaction.
-    - headers: {
-        "auth": {
-          "username": "usernameExample",
-          "password": "passwordExample"
-        }
-    }
+    - headers: {}
     - body: {}
 ```
 
